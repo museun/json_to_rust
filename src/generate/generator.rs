@@ -90,9 +90,8 @@ impl Generator {
 
             match shape {
                 Shape::Object(map) => {
-                    if self.opts.max_size.is_none() {
-                        self.make_field_map(map)
-                    } else if self.opts.max_size.filter(|&max| map.len() > max).is_some() {
+                    let max = self.opts.max_size;
+                    if max.is_none() || max.filter(|&max| map.len() > max).is_some() {
                         self.make_field_map(map);
                     } else {
                         self.walk(shape, wrap, &field_name)

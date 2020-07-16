@@ -17,7 +17,7 @@ impl Program {
         };
         g.walk(
             &Shape::new(&val, tuple_max.unwrap_or_default()),
-            None,
+            <_>::default(),
             &root_name,
         );
 

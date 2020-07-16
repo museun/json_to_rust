@@ -12,6 +12,8 @@ pub struct Field {
     pub kind: String,
 }
 
+// TODO replace this with a dump method that writes directly to an
+// std::io::Write instead of allocating a string
 impl std::fmt::Display for Struct {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         const STD_DERIVES: &str = "#[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]";
@@ -52,6 +54,8 @@ pub struct Item {
     pub body: Vec<String>,
 }
 
+// TODO replace this with a dump method that writes directly to an
+// std::io::Write instead of allocating a string
 impl std::fmt::Display for Item {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.ident)?;

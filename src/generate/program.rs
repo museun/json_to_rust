@@ -45,6 +45,8 @@ impl Program {
     }
 }
 
+// TODO replace this with a dump method that writes directly to an
+// std::io::Write instead of allocating a string
 impl std::fmt::Display for Program {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.is_snippet {

@@ -23,23 +23,23 @@ pub enum Shape {
 impl Shape {
     pub fn new(val: &Value, max_tuple: usize) -> Self {
         match *val {
-            Value::Null => Shape::Null,
-            Value::Bool(..) => Shape::Bool,
-            Value::Number(ref n) if n.is_i64() => Shape::Integer,
-            Value::Number(..) => Shape::Float,
-            Value::String(..) => Shape::String,
+            Value::Null => Self::Null,
+            Value::Bool(..) => Self::Bool,
+            Value::Number(ref n) if n.is_i64() => Self::Integer,
+            Value::Number(..) => Self::Float,
+            Value::String(..) => Self::String,
             Value::Array(ref array) => {
                 let len = array.len();
                 if len > 1 && len <= max_tuple {
-                    Shape::Tuple(
+                    Self::Tuple(
                         array.iter().map(|s| Self::new(s, max_tuple)).collect(),
                         len as _,
                     )
                 } else {
-                    let ty = array.iter().fold(Shape::Bottom, |left, v| {
-                        Shape::factor(left, Self::new(v, max_tuple))
+                    let ty = array.iter().fold(Self::Bottom, |left, v| {
+                        Self::factor(left, Self::new(v, max_tuple))
                     });
-                    Shape::Array(Box::new(ty))
+                    Self::Array(Box::new(ty))
                 }
             }
             Value::Object(ref map) => {
@@ -47,31 +47,32 @@ impl Shape {
                     .iter()
                     .map(|(k, v)| (k.clone(), Self::new(v, max_tuple)))
                     .collect();
-                Shape::Object(fields)
+                Self::Object(fields)
             }
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn root(&self) -> &'static str {
         match self {
-            Shape::Bottom => "Bottom",
-            Shape::Any => "Any",
-            Shape::Optional(_) => "Optional",
-            Shape::Null => "Null",
-            Shape::Bool => "Bool",
-            Shape::String => "String",
-            Shape::Integer => "Integer",
-            Shape::Float => "Float",
-            Shape::Array(_) => "Array",
-            Shape::Object(_) => "Object",
-            Shape::Tuple(_, _) => "Tuple",
-            Shape::Map(_) => "Map",
-            Shape::Opaque(_) => "Opaque",
+            Self::Bottom => "Bottom",
+            Self::Any => "Any",
+            Self::Optional(_) => "Optional",
+            Self::Null => "Null",
+            Self::Bool => "Bool",
+            Self::String => "String",
+            Self::Integer => "Integer",
+            Self::Float => "Float",
+            Self::Array(_) => "Array",
+            Self::Object(_) => "Object",
+            Self::Tuple(_, _) => "Tuple",
+            Self::Map(_) => "Map",
+            Self::Opaque(_) => "Opaque",
         }
     }
 
     pub(crate) fn fold(shapes: impl IntoIterator<Item = Self>) -> Self {
-        shapes.into_iter().fold(Shape::Bottom, Self::factor)
+        shapes.into_iter().fold(Self::Bottom, Self::factor)
     }
 
     pub(crate) fn factor(left: Self, right: Self) -> Self {
@@ -154,14 +155,14 @@ impl Shape {
 
     fn into_optional(self) -> Self {
         match self {
-            Shape::Bottom | Shape::Any | Shape::Null | Shape::Optional(_) => self,
+            Self::Bottom | Self::Any | Self::Null | Self::Optional(_) => self,
             other => Self::Optional(Box::new(other)),
         }
     }
 }
 
 #[derive(PartialOrd, PartialEq, Ord, Eq, Debug)]
-pub(crate) enum Local {
+pub enum Local {
     Bool,
     Integer,
     Float,
@@ -172,7 +173,7 @@ pub(crate) enum Local {
 }
 
 impl Local {
-    pub(crate) fn new(shape: Shape) -> Self {
+    pub fn new(shape: Shape) -> Self {
         match shape {
             Shape::Optional(ty) => Self::Optional(Box::new(Self::new(*ty))),
 
@@ -180,14 +181,14 @@ impl Local {
             Shape::String => Self::String,
             Shape::Integer => Self::Integer,
             Shape::Float => Self::Float,
-            Shape::Tuple(el, ..) => Local::new(Shape::fold(el)),
-            Shape::Array(ty) => Self::Array(Box::new(Local::new(*ty))),
+            Shape::Tuple(el, ..) => Self::new(Shape::fold(el)),
+            Shape::Array(ty) => Self::Array(Box::new(Self::new(*ty))),
 
             _ => Self::Complex,
         }
     }
 
-    pub(crate) fn format(self, s: &mut String) {
+    pub fn format(self, s: &mut String) {
         const ANY_VALUE: &str = "::serde_json::Value";
 
         match self {

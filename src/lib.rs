@@ -179,7 +179,7 @@ impl Generated {
                 let folded = Shape::fold(els.clone());
                 // eprintln!("folded: [{}; {}]", folded.root(), e);
                 if folded == Shape::Any && els.iter().any(|s| *s != Shape::Any) {
-                    self.make_tuple(&els, None)
+                    self.make_tuple(els, None)
                 } else {
                     self.make_vec(&folded, name)
                 }
@@ -307,6 +307,7 @@ impl Generated {
     }
 }
 
+#[cfg(test)]
 fn run_it(data: &str) -> Program {
     let opts = GenerateOptions {
         json_name: Some("baz".into()),

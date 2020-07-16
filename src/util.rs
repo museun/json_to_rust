@@ -2,7 +2,7 @@ use inflections::Inflect as _;
 
 use std::collections::HashSet;
 
-pub(crate) const KEYWORDS: &[&str] = &[
+pub const KEYWORDS: &[&str] = &[
     "abstract", "alignof", "as", "become", "box", "break", "const", "continue", "crate", "do",
     "else", "enum", "extern", "false", "final", "fn", "for", "if", "impl", "in", "let", "loop",
     "macro", "match", "mod", "move", "mut", "offsetof", "override", "priv", "proc", "pub", "pure",
@@ -11,11 +11,11 @@ pub(crate) const KEYWORDS: &[&str] = &[
     "await", "try",
 ];
 
-pub(crate) fn fix_struct_name(name: &str, used: &mut HashSet<String>) -> String {
+pub fn fix_struct_name(name: &str, used: &mut HashSet<String>) -> String {
     fix_name(name, used, to_pascal_case)
 }
 
-pub(crate) fn fix_field_name(name: &str, used: &mut HashSet<String>) -> String {
+pub fn fix_field_name(name: &str, used: &mut HashSet<String>) -> String {
     fix_name(name, used, to_snake_case)
 }
 
@@ -48,7 +48,7 @@ fn fix_name(name: &str, used: &mut HashSet<String>, rename: fn(&str) -> String) 
     unreachable!()
 }
 
-pub(crate) fn to_snake_case(name: &str) -> String {
+pub fn to_snake_case(name: &str) -> String {
     name.to_snake_case()
 
     // let mut out = String::with_capacity(name.len());
@@ -77,7 +77,7 @@ pub(crate) fn to_snake_case(name: &str) -> String {
     // out
 }
 
-pub(crate) fn to_pascal_case(name: &str) -> String {
+pub fn to_pascal_case(name: &str) -> String {
     name.to_pascal_case()
 
     // let name = name.trim();

@@ -9,7 +9,7 @@ readme = "README.md"
 [dependencies]
 anyhow = "1.0.31"
 indexmap = { version = "1.4.0", features = ["serde-1"] }
-serde_json = { version = "1.0.56", features = ["preserve_order"] }
 inflections = "1.1.1"
 pico-args = "0.3.3"
+serde_json = { version = "1.0.56", features = ["preserve_order"] }
 

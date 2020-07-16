@@ -1,4 +1,4 @@
-use super::generator::Generator;
+use super::generator::{Generator, NOOP_WRAPPER};
 use crate::{infer::Shape, Options};
 use serde_json::Value;
 
@@ -17,7 +17,7 @@ impl Program {
         };
         g.walk(
             &Shape::new(&val, tuple_max.unwrap_or_default()),
-            <_>::default(),
+            NOOP_WRAPPER,
             &root_name,
         );
 

@@ -160,33 +160,36 @@ impl Generator {
     }
 }
 
-static MAP_WRAPPER: Wrapper = Wrapper {
+pub static MAP_WRAPPER: Wrapper = Wrapper {
     left: "::std::collections::HashMap<String, ",
     right: ">",
 };
 
-static VEC_WRAPPER: Wrapper = Wrapper {
+pub static VEC_WRAPPER: Wrapper = Wrapper {
     left: "::std::vec::Vec<",
     right: ">",
 };
 
-static TUPLE_WRAPPER: Wrapper = Wrapper {
+pub static TUPLE_WRAPPER: Wrapper = Wrapper {
     left: "(",
     right: ")",
 };
 
-static NOOP_WRAPPER: Wrapper = Wrapper {
-    left: "",
-    right: "",
-};
+pub static NOOP_WRAPPER: Wrapper = Wrapper::new();
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone)]
 pub struct Wrapper {
     left: &'static str,
     right: &'static str,
 }
 
 impl Wrapper {
+    pub const fn new() -> Self {
+        Self {
+            left: "",
+            right: "",
+        }
+    }
     fn apply(&self, item: String) -> String {
         if self.left.is_empty() && self.right.is_empty() {
             return item;

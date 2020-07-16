@@ -5,7 +5,7 @@ use crate::{
 };
 use std::collections::HashSet;
 
-type Id = Option<fn(&str) -> String>;
+type WrapId = Option<fn(&str) -> String>;
 
 #[derive(Debug, Default)]
 pub struct Generator {
@@ -20,7 +20,7 @@ pub struct Generator {
 impl Generator {
     const ANY_VALUE: &'static str = "::serde_json::Value";
 
-    pub fn walk(&mut self, shape: &Shape, wrap: Id, name: &str) {
+    pub fn walk(&mut self, shape: &Shape, wrap: WrapId, name: &str) {
         self.depth += 1;
 
         match shape {
@@ -51,7 +51,7 @@ impl Generator {
         self.depth -= 1;
     }
 
-    fn make_tuple(&mut self, shapes: &[Shape], wrap: Id) {
+    fn make_tuple(&mut self, shapes: &[Shape], wrap: WrapId) {
         let (mut types, mut defs) = (String::new(), Vec::new());
         for shape in shapes {
             self.walk(shape, wrap, "");
@@ -76,7 +76,7 @@ impl Generator {
         });
     }
 
-    fn make_struct(&mut self, input_name: &str, map: &Map, wrap: Id) {
+    fn make_struct(&mut self, input_name: &str, map: &Map, wrap: WrapId) {
         let struct_name = util::fix_struct_name(input_name, &mut self.seen_structs);
 
         let mut defs = Vec::new();
@@ -158,7 +158,7 @@ impl Generator {
         self.walk(ty, Some(|s| format!("::std::vec::Vec<{}>", s)), name);
     }
 
-    fn write_primitive(&mut self, s: impl Into<String>, wrap: Id) {
+    fn write_primitive(&mut self, s: impl Into<String>, wrap: WrapId) {
         let s = s.into();
         self.items.push(Item {
             ident: wrap.map(|w| w(&s)).unwrap_or_else(|| s),

@@ -1,6 +1,6 @@
 use super::generator::{Generator, NOOP_WRAPPER};
 use crate::{infer::Shape, Options};
-use serde_json::Value;
+use json::JsonValue as Value;
 
 pub struct Program {
     pub body: String,

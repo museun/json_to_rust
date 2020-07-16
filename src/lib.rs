@@ -12,8 +12,10 @@ where
     W: Write + ?Sized,
 {
     let mut reader = BufReader::new(read);
-    let val: serde_json::Value = serde_json::from_reader(&mut reader)?;
-    let program = Program::generate(val, opts);
+    let mut buf = String::new();
+    reader.read_to_string(&mut buf)?;
+
+    let program = Program::generate(json::parse(&buf)?, opts);
 
     let mut writer = BufWriter::new(write);
     writer.write_all(program.to_string().as_bytes())?;

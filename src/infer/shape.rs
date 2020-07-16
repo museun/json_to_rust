@@ -1,5 +1,5 @@
 use super::{HashMap, Map};
-use serde_json::Value;
+use json::JsonValue as Value;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Shape {
@@ -22,10 +22,16 @@ impl Shape {
     pub fn new(val: &Value, max_tuple: usize) -> Self {
         match *val {
             Value::Null => Self::Null,
-            Value::Bool(..) => Self::Bool,
-            Value::Number(ref n) if n.is_i64() => Self::Integer,
-            Value::Number(..) => Self::Float,
-            Value::String(..) => Self::String,
+            Value::Boolean(..) => Self::Bool,
+            Value::Number(..) => {
+                if val.as_i64().is_some() {
+                    Self::Integer
+                } else {
+                    Self::Float
+                }
+            }
+
+            Value::String(..) | Value::Short(..) => Self::String,
             Value::Array(ref array) => {
                 let len = array.len();
                 if len > 1 && len <= max_tuple {
@@ -43,9 +49,8 @@ impl Shape {
             Value::Object(ref map) => {
                 let fields = map
                     .iter()
-                    .map(|(k, v)| (k.clone(), Self::new(v, max_tuple)))
-                    .collect();
-                Self::Object(fields)
+                    .map(|(k, v)| (k.to_string(), Self::new(v, max_tuple)));
+                Self::Object(fields.collect())
             }
         }
     }

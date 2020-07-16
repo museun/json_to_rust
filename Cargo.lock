@@ -24,8 +24,8 @@ version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "itoa"
-version = "0.4.6"
+name = "json"
+version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -35,8 +35,8 @@ dependencies = [
  "anyhow 1.0.31 (registry+https://github.com/rust-lang/crates.io-index)",
  "indexmap 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "inflections 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "json 0.12.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "pico-args 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.56 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -44,34 +44,10 @@ name = "pico-args"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
-[[package]]
-name = "ryu"
-version = "1.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
-name = "serde"
-version = "1.0.114"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
-name = "serde_json"
-version = "1.0.56"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "indexmap 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "itoa 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "ryu 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.114 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
 [metadata]
 "checksum anyhow 1.0.31 (registry+https://github.com/rust-lang/crates.io-index)" = "85bb70cc08ec97ca5450e6eba421deeea5f172c0fc61f78b5357b2a8e8be195f"
 "checksum autocfg 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "f8aac770f1885fd7e387acedd76065302551364496e46b3dd00860b2f8359b9d"
 "checksum indexmap 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c398b2b113b55809ceb9ee3e753fcbac793f1956663f3c36549c1346015c2afe"
 "checksum inflections 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "a257582fdcde896fd96463bf2d40eefea0580021c0712a0e2b028b60b47a837a"
-"checksum itoa 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)" = "dc6f3ad7b9d11a0c00842ff8de1b60ee58661048eb8049ed33c73594f359d7e6"
+"checksum json 0.12.4 (registry+https://github.com/rust-lang/crates.io-index)" = "078e285eafdfb6c4b434e0d31e8cfcb5115b651496faca5749b88fafd4f23bfd"
 "checksum pico-args 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "1b1eee8b1f4966c8343d7ca0f5a8452cd35d5610a2e0efbe2a68cae44bef2046"
-"checksum ryu 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)" = "71d301d4193d031abdd79ff7e3dd721168a9572ef3fe51a1517aba235bd8f86e"
-"checksum serde 1.0.114 (registry+https://github.com/rust-lang/crates.io-index)" = "5317f7588f0a5078ee60ef675ef96735a1442132dc645eb1d12c018620ed8cd3"
-"checksum serde_json 1.0.56 (registry+https://github.com/rust-lang/crates.io-index)" = "3433e879a558dde8b5e8feb2a04899cf34fdde1fafb894687e52105fc1162ac3"

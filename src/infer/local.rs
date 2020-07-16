@@ -27,6 +27,7 @@ impl Local {
         }
     }
 
+    // TODO make this iterative and use the 'Wrapper' from the generator
     pub fn format(self, s: &mut String) {
         const ANY_VALUE: &str = "::serde_json::Value";
 

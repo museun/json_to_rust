@@ -1,4 +1,4 @@
-use std::io::{BufReader, Read};
+use std::io::{BufReader, BufWriter, Read, Write};
 
 mod infer;
 mod util;
@@ -6,10 +6,18 @@ mod util;
 mod generate;
 use generate::Program;
 
-pub fn generate<R: Read + ?Sized>(opts: GenerateOptions, read: &mut R) -> anyhow::Result<String> {
+pub fn generate<R: Read + ?Sized, W: Write + ?Sized>(
+    opts: GenerateOptions,
+    read: &mut R,
+    write: &mut W,
+) -> anyhow::Result<()> {
     let mut reader = BufReader::new(read);
     let val: serde_json::Value = serde_json::from_reader(&mut reader)?;
-    Ok(Program::generate(val, opts).to_string())
+    let program = Program::generate(val, opts);
+
+    let mut writer = BufWriter::new(write);
+    writer.write_all(program.to_string().as_bytes())?;
+    Ok(())
 }
 
 #[derive(Debug, Default)]

@@ -122,8 +122,6 @@ fn main() -> anyhow::Result<()> {
     let stdin = std::io::stdin();
     let mut stdin = stdin.lock();
 
-    let data = json_to_rust::generate(opts, &mut stdin)?;
-    println!("{}", data);
-
-    Ok(())
+    let mut out = std::io::stdout();
+    json_to_rust::generate(opts, &mut stdin, &mut out)
 }

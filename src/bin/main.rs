@@ -97,7 +97,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     let opts = {
-        let mut opts = json_to_rust::GenerateOptions::default();
+        let mut opts = json_to_rust::Options::default();
 
         opts.make_unit_test = args.contains(["-u", "--make-unit-tests"]);
         opts.make_main = args.contains(["-m", "--make-main"]);

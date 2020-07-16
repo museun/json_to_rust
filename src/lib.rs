@@ -7,7 +7,7 @@ mod generate;
 use generate::Program;
 
 pub fn generate<R: Read + ?Sized, W: Write + ?Sized>(
-    opts: GenerateOptions,
+    opts: Options,
     read: &mut R,
     write: &mut W,
 ) -> anyhow::Result<()> {
@@ -21,7 +21,7 @@ pub fn generate<R: Read + ?Sized, W: Write + ?Sized>(
 }
 
 #[derive(Debug, Default)]
-pub struct GenerateOptions {
+pub struct Options {
     pub json_name: Option<String>,
     pub root_name: String,
     pub make_unit_test: bool,

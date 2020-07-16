@@ -6,11 +6,11 @@ mod util;
 mod generate;
 use generate::Program;
 
-pub fn generate<R: Read + ?Sized, W: Write + ?Sized>(
-    opts: Options,
-    read: &mut R,
-    write: &mut W,
-) -> anyhow::Result<()> {
+pub fn generate<R, W>(opts: Options, read: &mut R, write: &mut W) -> anyhow::Result<()>
+where
+    R: Read + ?Sized,
+    W: Write + ?Sized,
+{
     let mut reader = BufReader::new(read);
     let val: serde_json::Value = serde_json::from_reader(&mut reader)?;
     let program = Program::generate(val, opts);
@@ -20,6 +20,7 @@ pub fn generate<R: Read + ?Sized, W: Write + ?Sized>(
     Ok(())
 }
 
+// TODO document this
 #[derive(Debug, Default)]
 pub struct Options {
     pub json_name: Option<String>,

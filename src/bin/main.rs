@@ -98,12 +98,9 @@ fn main() -> anyhow::Result<()> {
 
     let opts = {
         let mut opts = json_to_rust::GenerateOptions::default();
-        if args.contains(["-u", "--make-unit-tests"]) {
-            opts.make_unit_test = true;
-        }
-        if args.contains(["-m", "--make-main"]) {
-            opts.make_main = true;
-        }
+
+        opts.make_unit_test = args.contains(["-u", "--make-unit-tests"]);
+        opts.make_main = args.contains(["-m", "--make-main"]);
 
         opts.tuple_max = args.opt_value_from_str(["-t", "--max-tuple"])?;
         opts.max_size = args.opt_value_from_str(["-l", "--large-struct"])?;

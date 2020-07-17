@@ -5,20 +5,59 @@ use crate::{
 };
 use std::collections::HashSet;
 
-#[derive(Debug, Default)]
-pub struct Generator {
+#[derive(Debug)]
+pub struct Generator<'a> {
     pub structs: Vec<Struct>,
     pub items: Vec<Item>,
-    pub opts: Options,
+    pub opts: &'a Options,
 
     pub seen_structs: HashSet<String>,
     pub depth: usize,
+
+    pub root_at: usize,
+    pub wrap_in_vec: Option<Struct>,
 }
 
-impl Generator {
+impl<'a> Generator<'a> {
+    pub fn new(opts: &'a Options) -> Self {
+        let (structs, items, seen_structs, depth, wrap_in_vec) = <_>::default();
+
+        Self {
+            opts,
+            root_at: 1,
+
+            structs,
+            items,
+            seen_structs,
+            depth,
+            wrap_in_vec,
+        }
+    }
+
     const ANY_VALUE: &'static str = "::serde_json::Value";
 
     pub fn walk(&mut self, shape: &Shape, wrap: Wrapper, name: &str) {
+        if self.depth == 0
+            && (matches!(shape, Shape::Array(..)) | matches!(shape, Shape::Tuple(..)))
+        {
+            // we're at the root and its an array so we should generate a Vec<Struct>
+            let t = self.wrap_in_vec.replace(Struct {
+                rename: None,
+                name: format!("{}List", self.opts.root_name),
+                fields: vec![Field {
+                    rename: self.opts.json_name.clone(),
+                    binding: "list".into(),
+                    kind: VEC_WRAPPER.apply(self.opts.root_name.clone()),
+                }],
+            });
+            assert!(
+                t.is_none(),
+                "only a top-level array should be provided. NDJSON is not supported"
+            );
+
+            self.root_at += 1;
+        }
+
         self.depth += 1;
 
         match shape {
@@ -33,7 +72,7 @@ impl Generator {
             Shape::Array(ty) => self.make_vec(ty, name),
             Shape::Map(ty) => self.make_map(ty),
 
-            Shape::Tuple(els, _) => {
+            Shape::Tuple(els, ..) => {
                 let folded = Shape::fold(els.clone());
                 // eprintln!("folded: [{}; {}]", folded.root(), e);
                 if folded == Shape::Any && els.iter().any(|s| *s != Shape::Any) {
@@ -89,13 +128,13 @@ impl Generator {
             match shape {
                 Shape::Object(map) => {
                     let max = self.opts.max_size;
-                    if max.is_none() || max.filter(|&max| map.len() > max).is_some() {
+                    if max.filter(|&max| map.len() > max).is_some() || map.len() > 5 {
                         self.make_field_map(map);
                     } else {
                         self.walk(shape, wrap, &field_name)
                     }
                 }
-                Shape::Map(_) => panic!("shouldn't have a map here"),
+                Shape::Map(_) => unreachable!("shouldn't have a map here"),
                 _ => self.walk(shape, wrap, &field_name),
             }
 
@@ -117,7 +156,7 @@ impl Generator {
                 .opts
                 .json_name
                 .as_ref()
-                .filter(|_| self.depth == 1)
+                .filter(|_| self.wrap_in_vec.is_none() && self.depth == self.root_at)
                 .map(Clone::clone),
             name: struct_name.clone(),
             fields: body,
@@ -190,10 +229,29 @@ impl Wrapper {
             right: "",
         }
     }
-    fn apply(&self, item: String) -> String {
+
+    pub fn apply(&self, item: String) -> String {
         if self.left.is_empty() && self.right.is_empty() {
             return item;
         }
         format!("{}{}{}", self.left, item, self.right)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn do_we_decay_arrays() {
+        let s = std::fs::read_to_string("short.json").unwrap();
+
+        let val = json::parse(&s).unwrap();
+
+        let opts = Options::default();
+        let p = crate::generate::Program::generate(val, &s, &opts);
+        // let p = Shape::new(&val, 0);
+
+        println!("{:#?}", p);
     }
 }

@@ -30,6 +30,8 @@ impl Local {
     // TODO make this iterative and use the 'Wrapper' from the generator
     pub fn format(self, s: &mut String) {
         const ANY_VALUE: &str = "::serde_json::Value";
+        const VEC: &str = "::std::vec::Vec";
+        const OPTION: &str = "::std::option::Option";
 
         match self {
             Self::Bool => s.push_str("bool"),
@@ -37,12 +39,16 @@ impl Local {
             Self::Float => s.push_str("f64"),
             Self::String => s.push_str("String"),
             Self::Array(ty) => {
-                s.push_str("::std::vec::Vec<");
+                s.push_str(VEC);
+
+                s.push('<');
                 Self::format(*ty, s);
                 s.push('>')
             }
             Self::Optional(ty) => {
-                s.push_str("::std::option::Option<");
+                s.push_str(OPTION);
+
+                s.push('<');
                 Self::format(*ty, s);
                 s.push('>')
             }

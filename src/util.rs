@@ -1,5 +1,4 @@
-use inflections::Inflect as _;
-
+use crate::CasingScheme;
 use std::collections::HashSet;
 
 pub const KEYWORDS: &[&str] = &[
@@ -11,19 +10,19 @@ pub const KEYWORDS: &[&str] = &[
     "await", "try",
 ];
 
-pub fn fix_struct_name(name: &str, used: &mut HashSet<String>) -> String {
-    fix_name(name, used, to_pascal_case)
-}
+// pub fn fix_struct_name(name: &str, casing: CasingScheme, used: &mut HashSet<String>) -> String {
+//     fix_name(name, used, casing)
+// }
 
-pub fn fix_field_name(name: &str, used: &mut HashSet<String>) -> String {
-    fix_name(name, used, to_snake_case)
-}
+// pub fn fix_field_name(name: &str, casing: CasingScheme, used: &mut HashSet<String>) -> String {
+//     fix_name(name, used, casing)
+// }
 
-fn fix_name(name: &str, used: &mut HashSet<String>, rename: fn(&str) -> String) -> String {
+pub fn fix_name(name: &str, used: &mut HashSet<String>, casing: CasingScheme) -> String {
     let name = name.trim();
     let mut out = match name.chars().next() {
-        Some(c) if c.is_ascii() && c.is_numeric() => rename(&format!("n{}", name)),
-        _ => rename(name),
+        Some(c) if c.is_ascii() && c.is_numeric() => casing.convert(&format!("n{}", name)),
+        _ => casing.convert(name),
     };
 
     if KEYWORDS.contains(&&*out) {
@@ -46,53 +45,4 @@ fn fix_name(name: &str, used: &mut HashSet<String>, rename: fn(&str) -> String) 
     }
 
     unreachable!()
-}
-
-pub fn to_snake_case(name: &str) -> String {
-    name.to_snake_case()
-
-    // let mut out = String::with_capacity(name.len());
-    // let mut seen = false;
-    // for (i, ch) in name.char_indices() {
-    //     if i == 0 && ch == '_' {
-    //         continue;
-    //     }
-
-    //     if i > 0 && ch.is_numeric() && !seen {
-    //         out.push('_');
-    //         seen = true;
-    //     }
-
-    //     if !ch.is_numeric() {
-    //         seen = false
-    //     }
-
-    //     if ch == '-' {
-    //         out.push('_');
-    //         seen = true;
-    //     } else {
-    //         out.push(ch.to_ascii_lowercase());
-    //     }
-    // }
-    // out
-}
-
-pub fn to_pascal_case(name: &str) -> String {
-    name.to_pascal_case()
-
-    // let name = name.trim();
-    // let mut out = String::with_capacity(name.len());
-    // let mut upper = true;
-    // for ch in name.chars() {
-    //     if ch == '_' {
-    //         upper = true
-    //     } else if upper {
-    //         out.push(ch.to_ascii_uppercase());
-    //         upper = false
-    //     } else {
-    //         out.push(ch)
-    //     }
-    // }
-    // assert!(!out.is_empty());
-    // out
 }

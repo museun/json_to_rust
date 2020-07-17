@@ -25,6 +25,7 @@ where
 }
 
 // TODO document this
+#[derive(Debug)]
 pub struct Options {
     pub json_name: Option<String>,
     pub root_name: String,
@@ -34,11 +35,27 @@ pub struct Options {
     pub tuple_max: Option<usize>,
 
     pub default_derives: String,
+    pub field_naming: CasingScheme,
+    pub struct_naming: CasingScheme,
 }
 
-impl std::fmt::Debug for Options {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Options").finish()
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
+pub enum CasingScheme {
+    Snake,
+    Pascal,
+    Constant,
+    Camel,
+}
+
+impl CasingScheme {
+    fn convert(self, input: &str) -> String {
+        use inflections::Inflect as _;
+        match self {
+            Self::Snake => input.to_snake_case(),
+            Self::Pascal => input.to_pascal_case(),
+            Self::Constant => input.to_constant_case(),
+            Self::Camel => input.to_camel_case(),
+        }
     }
 }
 
@@ -56,6 +73,9 @@ impl Default for Options {
             max_size,
             tuple_max,
             default_derives,
+
+            field_naming: CasingScheme::Snake,
+            struct_naming: CasingScheme::Pascal,
         }
     }
 }

@@ -3,7 +3,7 @@ use super::{
     item::{Item, Struct},
     Print,
 };
-use crate::{generate, infer::Shape, util, Options};
+use crate::{generate, infer::Shape, CasingScheme, Options};
 
 use json::JsonValue as Value;
 use std::io::Write;
@@ -60,7 +60,7 @@ impl<'a> Program<'a> {
         let name = self.get_root().as_ref().map(|s| &s.name)?;
 
         let mut type_name = name.to_string();
-        let binding = util::to_snake_case(&type_name);
+        let binding = CasingScheme::Snake.convert(&type_name);
 
         if self.is_wrapped() {
             type_name = VEC_WRAPPER.apply(type_name);

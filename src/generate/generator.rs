@@ -114,7 +114,8 @@ impl<'a> Generator<'a> {
     }
 
     fn make_struct(&mut self, input_name: &str, map: &Map, wrap: Wrapper) {
-        let struct_name = util::fix_struct_name(input_name, &mut self.seen_structs);
+        let struct_name =
+            util::fix_name(input_name, &mut self.seen_structs, self.opts.struct_naming);
 
         let mut defs = Vec::new();
         let mut body = Vec::new();
@@ -122,7 +123,7 @@ impl<'a> Generator<'a> {
         let mut seen_fields = HashSet::new();
 
         for (name, shape) in map.iter().rev() {
-            let field_name = util::fix_field_name(name, &mut seen_fields);
+            let field_name = util::fix_name(name, &mut seen_fields, self.opts.field_naming);
             let field_renamed = field_name != *name;
 
             match shape {

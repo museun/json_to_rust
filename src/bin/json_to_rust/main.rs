@@ -1,6 +1,6 @@
 use anyhow::Context as _;
 use inflections::Inflect as _;
-use json_to_rust::{all_std_derives, custom, no_derives};
+use json_to_rust::{all_std_derives, custom, no_derives, CasingScheme};
 
 fn header() {
     println!("{}: {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
@@ -31,6 +31,9 @@ flags:
 
     -d, --derive            add this derive to the generate types
     -nd, --no-std-derives   only use the serde derives
+
+    -f, --field-naming      the casing scheme to use for fields
+    -s, --struct-naming     the casing scheme to use for structs
 
     -v, --version           show the current version
     -h, --help              show this message
@@ -72,7 +75,7 @@ flags:
 
     -t, --max-tuple         heterogeneous arrays under this size will be treated as a tuple
                             - for types such as [1, false, "foo"] if the length exceeds the provided value
-                            - then a Vec<Value> will be created instead. otherwise a tuple will be created. 
+                            - then a Vec<Value> will be created instead. otherwise a tuple will be created.
                             - for the example above: a tuple of (i64, bool, String)
 
     -d, --derive            add this derive to the generate types
@@ -86,6 +89,14 @@ flags:
     -nd, --no-std-derives   only use the serde derives
                             - this just uses 'Serialize' and 'Deserialize'
                             - if this nor [-d, --derive] are provided then the full range of std derives will be used
+
+    -f, --field-naming      the casing scheme to use for fields
+                            - this default to snake_case
+                            - available options [snake, constant, pascal, camel]
+
+    -s, --struct-naming     the casing scheme to use for structs
+                            - this defaults to PascalCase
+                            - available options [snake, constant, pascal, camel]
 
     -v, --version           show the current version
     -h, --help              show this message
@@ -144,6 +155,30 @@ fn main() -> anyhow::Result<()> {
         if opts.default_derives.is_empty() {
             opts.default_derives = no_derives()
         }
+
+        fn parse_casing(input: &str) -> Result<CasingScheme, pico_args::Error> {
+            let ok = match input.to_lower_case().as_str() {
+                "snake" => CasingScheme::Snake,
+                "pascal" => CasingScheme::Pascal,
+                "constant" => CasingScheme::Constant,
+                "camel" => CasingScheme::Camel,
+                s => {
+                    let cause =
+                        format!("'{}' unknown casing. try [snake,pascal,constant,camel]", s);
+                    let err = pico_args::Error::ArgumentParsingFailed { cause };
+                    return Err(err);
+                }
+            };
+            Ok(ok)
+        }
+
+        opts.field_naming = args
+            .opt_value_from_fn(["-f", "--field-naming"], parse_casing)?
+            .unwrap_or_else(|| CasingScheme::Snake);
+
+        opts.struct_naming = args
+            .opt_value_from_fn(["-s", "--struct-naming"], parse_casing)?
+            .unwrap_or_else(|| CasingScheme::Pascal);
 
         args.finish()?;
 

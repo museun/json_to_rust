@@ -113,7 +113,7 @@ impl Wrapper {
     }
 
     pub fn option() -> Self {
-        Self::new("Option<", ">)")
+        Self::new("Option<", ">")
     }
 
     pub fn apply(&self, item: String) -> String {
@@ -124,7 +124,7 @@ impl Wrapper {
                 }
                 format!("{}{}{}", left, item, right)
             }
-            Wrapper::Nested { left, right } => right.apply(left.apply(item)),
+            Wrapper::Nested { left, right } => left.apply(right.apply(item)),
         }
     }
 }

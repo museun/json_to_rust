@@ -11,6 +11,7 @@ pub struct Struct {
 #[derive(Debug, Clone)]
 pub struct Field {
     pub rename: Option<String>,
+    pub default: bool,
     pub binding: String,
     pub kind: String,
 }
@@ -32,9 +33,19 @@ impl Print for Struct {
         };
 
         for field in fields {
-            if let Some(rename) = &field.rename {
-                writeln!(writer, "    #[serde(rename = \"{}\")]", rename)?;
+            match (field.default, &field.rename) {
+                (true, Some(rename)) => {
+                    writeln!(writer, "    #[serde(default, rename = \"{}\")]", rename)?;
+                }
+                (true, None) => {
+                    writeln!(writer, "    #[serde(default)]")?;
+                }
+                (false, Some(rename)) => {
+                    writeln!(writer, "    #[serde(rename = \"{}\")]", rename)?;
+                }
+                _ => {}
             }
+
             writeln!(writer, "    pub {}: {},", field.binding, field.kind)?;
         }
 

@@ -42,7 +42,7 @@ impl<'a> Generator<'a> {
 
     const ANY_VALUE: &'static str = "::serde_json::Value";
 
-    pub fn walk(&mut self, shape: &Shape, wrap: &Wrapper, name: &str) {
+    pub fn walk(&mut self, shape: &Shape, wrap: &Wrapper, name: &str, default: &mut bool) {
         if self.depth == 0
             && (matches!(shape, Shape::Array(..)) | matches!(shape, Shape::Tuple(..)))
         {
@@ -52,6 +52,7 @@ impl<'a> Generator<'a> {
                 name: format!("{}List", self.opts.root_name),
                 fields: vec![Field {
                     rename: self.opts.json_name.clone(),
+                    default: *default,
                     binding: "list".into(),
                     kind: self.opts.vec_wrapper.apply(self.opts.root_name.clone()),
                 }],
@@ -75,31 +76,32 @@ impl<'a> Generator<'a> {
             Shape::Float => self.write_primitive("f64", wrap),
             Shape::Opaque(ty) => self.write_primitive(ty, wrap),
             Shape::Optional(inner) => {
-                self.walk(inner, &Wrapper::wrap(wrap.clone(), Wrapper::option()), name)
+                let wrap = Wrapper::wrap(wrap.clone(), Wrapper::option());
+                self.walk(inner, &wrap, name, default)
             }
-            Shape::Array(ty) => self.make_vec(ty, name),
-            Shape::Map(ty) => self.make_map(ty),
+            Shape::Array(ty) => self.make_vec(ty, name, wrap, default),
+            Shape::Map(ty) => self.make_map(ty, default),
 
             Shape::Tuple(els, ..) => {
                 let folded = Shape::fold(els.clone());
                 // eprintln!("folded: [{}; {}]", folded.root(), e);
                 if folded == Shape::Any && els.iter().any(|s| *s != Shape::Any) {
-                    self.make_tuple(els, &Wrapper::default())
+                    self.make_tuple(els, &Wrapper::default(), default)
                 } else {
-                    self.make_vec(&folded, name)
+                    self.make_vec(&folded, name, wrap, default)
                 }
             }
 
-            Shape::Object(ty) => self.make_struct(name, ty, &Wrapper::default()),
+            Shape::Object(ty) => self.make_struct(name, ty, &Wrapper::default(), default),
         }
 
         self.depth -= 1;
     }
 
-    fn make_tuple(&mut self, shapes: &[Shape], wrap: &Wrapper) {
+    fn make_tuple(&mut self, shapes: &[Shape], wrap: &Wrapper, default: &mut bool) {
         let (mut types, mut defs) = (String::new(), Vec::new());
         for shape in shapes {
-            self.walk(shape, wrap, "");
+            self.walk(shape, wrap, "", default);
             if !types.is_empty() {
                 types.push_str(", ");
             }
@@ -121,7 +123,7 @@ impl<'a> Generator<'a> {
         });
     }
 
-    fn make_struct(&mut self, input_name: &str, map: &Map, wrap: &Wrapper) {
+    fn make_struct(&mut self, input_name: &str, map: &Map, wrap: &Wrapper, default: &mut bool) {
         let struct_naming = if self.depth == 1 {
             CasingScheme::Identity
         } else {
@@ -135,6 +137,17 @@ impl<'a> Generator<'a> {
 
         let mut seen_fields = HashSet::new();
 
+        fn collapse_option_vec(shape: &Shape, should_collapse: bool) -> Option<&Shape> {
+            if should_collapse {
+                if let Shape::Optional(ty) = shape {
+                    if let Shape::Array(..) = **ty {
+                        return Some(ty);
+                    }
+                }
+            }
+            None
+        }
+
         for (name, shape) in map.iter().rev() {
             let field_name = util::fix_name(name, &mut seen_fields, self.opts.field_naming);
             let field_renamed = field_name != *name;
@@ -145,20 +158,31 @@ impl<'a> Generator<'a> {
                 // acceptable)
                 Shape::Object(map) => self.make_field_map(map),
                 Shape::Map(_) => unreachable!("shouldn't have a map here"),
-                _ => self.walk(shape, wrap, &field_name),
+                _ => {
+                    if let Some(shape) = collapse_option_vec(shape, self.opts.collapse_option_vec) {
+                        // mark it as default
+                        *default = true;
+                        self.walk(shape, wrap, &field_name, default)
+                    } else {
+                        self.walk(shape, wrap, &field_name, default)
+                    }
+                }
             }
 
             let item = self.items.pop().unwrap();
             defs.extend(item.body);
+
             body.push(Field {
                 rename: if field_renamed {
                     Some(name.clone())
                 } else {
                     None
                 },
+                default: *default,
                 binding: field_name,
                 kind: item.ident,
             });
+            *default = false;
         }
 
         self.structs.push(Struct {
@@ -193,13 +217,18 @@ impl<'a> Generator<'a> {
         })
     }
 
-    fn make_map(&mut self, ty: &Shape) {
-        self.walk(ty, &self.opts.map_wrapper, "");
+    fn make_map(&mut self, ty: &Shape, default: &mut bool) {
+        self.walk(ty, &self.opts.map_wrapper, "", default);
         self.should_include_map = true;
     }
 
-    fn make_vec(&mut self, ty: &Shape, name: &str) {
-        self.walk(ty, &self.opts.vec_wrapper, name);
+    fn make_vec(&mut self, ty: &Shape, name: &str, wrap: &Wrapper, default: &mut bool) {
+        self.walk(
+            ty,
+            &wrap.clone().wrap(self.opts.vec_wrapper.clone()),
+            name,
+            default,
+        );
     }
 
     fn write_primitive(&mut self, s: impl Into<String>, wrap: &Wrapper) {

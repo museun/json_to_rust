@@ -33,6 +33,8 @@ pub struct Options {
     pub make_unit_test: bool,
     pub make_main: bool,
 
+    pub collapse_option_vec: bool,
+
     pub tuple_max: Option<usize>,
 
     pub default_derives: String,

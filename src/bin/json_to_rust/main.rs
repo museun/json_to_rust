@@ -36,6 +36,8 @@ flags:
     --vec-wrapper           use this type for Vecs, defaults to 'Vec'
     --map-wrapper           use this type for Maps, defaults to 'HashMap'
 
+    --flatten-option-vec    flattens Option<Vec<T>> into just Vec<T>
+
     -v, --version           show the current version
     -h, --help              show this message
     "#;
@@ -97,6 +99,9 @@ flags:
 
     --vec-wrapper           use this type for Vecs, defaults to 'Vec'
     --map-wrapper           use this type for Maps, defaults to 'HashMap'
+
+    --flatten-option-vec    flattens Option<Vec<T>> into just Vec<T>
+                            - this also uses serde_default which'll create an empty Vec if it was None
 
     -v, --version           show the current version
     -h, --help              show this message
@@ -162,6 +167,8 @@ fn parse_args() -> anyhow::Result<json_to_rust::Options> {
         },
 
         json_name,
+
+        collapse_option_vec: args.contains("--flatten-option-vec"),
 
         field_naming: args
             .opt_value_from_fn(["-f", "--field-naming"], parse_casing)?

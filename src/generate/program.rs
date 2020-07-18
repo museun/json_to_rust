@@ -25,11 +25,9 @@ impl<'a> Program<'a> {
         let tuple_max = opts.tuple_max;
 
         let mut g = Generator::new(opts);
-        g.walk(
-            &Shape::new(&val, tuple_max.unwrap_or_default()),
-            &Wrapper::default(),
-            &root_name,
-        );
+        let shape = Shape::new(&val, tuple_max.unwrap_or_default());
+
+        g.walk(&shape, &Wrapper::default(), &root_name, &mut false);
 
         let Generator {
             structs,

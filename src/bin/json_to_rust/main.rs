@@ -1,5 +1,5 @@
 use inflections::Inflect as _;
-use json_to_rust::{all_std_derives, custom, no_derives, CasingScheme, MapWrapper, VecWrapper};
+use json_to_rust::{all_std_derives, custom, no_derives, CasingScheme, Wrapper};
 
 fn header() {
     println!("{}: {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
@@ -172,14 +172,14 @@ fn parse_args() -> anyhow::Result<json_to_rust::Options> {
             .unwrap_or_else(|| CasingScheme::Pascal),
 
         vec_wrapper: args
-            .opt_value_from_str("--vec-wrapper")?
-            .map(VecWrapper::custom)
-            .unwrap_or_else(VecWrapper::std),
+            .opt_value_from_str::<_, String>("--vec-wrapper")?
+            .map(Wrapper::custom_vec)
+            .unwrap_or_else(Wrapper::std_vec),
 
         map_wrapper: args
-            .opt_value_from_str("--map-wrapper")?
-            .map(MapWrapper::custom)
-            .unwrap_or_else(MapWrapper::std),
+            .opt_value_from_str::<_, String>("--map-wrapper")?
+            .map(Wrapper::custom_map)
+            .unwrap_or_else(Wrapper::std_map),
     };
 
     args.finish()?;

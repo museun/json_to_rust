@@ -4,7 +4,7 @@ use crate::{
     util, CasingScheme, Options,
 };
 use std::collections::HashSet;
-use util::{Wrapper, NOOP_WRAPPER, TUPLE_WRAPPER};
+use util::Wrapper;
 
 #[derive(Debug)]
 pub struct Generator<'a> {
@@ -42,7 +42,7 @@ impl<'a> Generator<'a> {
 
     const ANY_VALUE: &'static str = "::serde_json::Value";
 
-    pub fn walk(&mut self, shape: &Shape, wrap: Wrapper, name: &str) {
+    pub fn walk(&mut self, shape: &Shape, wrap: &Wrapper, name: &str) {
         if self.depth == 0
             && (matches!(shape, Shape::Array(..)) | matches!(shape, Shape::Tuple(..)))
         {
@@ -53,7 +53,7 @@ impl<'a> Generator<'a> {
                 fields: vec![Field {
                     rename: self.opts.json_name.clone(),
                     binding: "list".into(),
-                    kind: self.opts.vec_wrapper.0.apply(self.opts.root_name.clone()),
+                    kind: self.opts.vec_wrapper.apply(self.opts.root_name.clone()),
                 }],
             });
             assert!(
@@ -74,7 +74,9 @@ impl<'a> Generator<'a> {
             Shape::Integer => self.write_primitive("i64", wrap),
             Shape::Float => self.write_primitive("f64", wrap),
             Shape::Opaque(ty) => self.write_primitive(ty, wrap),
-            Shape::Optional(inner) => self.walk(inner, wrap, name),
+            Shape::Optional(inner) => {
+                self.walk(inner, &Wrapper::wrap(wrap.clone(), Wrapper::option()), name)
+            }
             Shape::Array(ty) => self.make_vec(ty, name),
             Shape::Map(ty) => self.make_map(ty),
 
@@ -82,19 +84,19 @@ impl<'a> Generator<'a> {
                 let folded = Shape::fold(els.clone());
                 // eprintln!("folded: [{}; {}]", folded.root(), e);
                 if folded == Shape::Any && els.iter().any(|s| *s != Shape::Any) {
-                    self.make_tuple(els, NOOP_WRAPPER)
+                    self.make_tuple(els, &Wrapper::default())
                 } else {
                     self.make_vec(&folded, name)
                 }
             }
 
-            Shape::Object(ty) => self.make_struct(name, ty, NOOP_WRAPPER),
+            Shape::Object(ty) => self.make_struct(name, ty, &Wrapper::default()),
         }
 
         self.depth -= 1;
     }
 
-    fn make_tuple(&mut self, shapes: &[Shape], wrap: Wrapper) {
+    fn make_tuple(&mut self, shapes: &[Shape], wrap: &Wrapper) {
         let (mut types, mut defs) = (String::new(), Vec::new());
         for shape in shapes {
             self.walk(shape, wrap, "");
@@ -114,12 +116,12 @@ impl<'a> Generator<'a> {
         }
 
         self.items.push(Item {
-            ident: TUPLE_WRAPPER.apply(types),
+            ident: Wrapper::tuple().apply(types),
             body: defs,
         });
     }
 
-    fn make_struct(&mut self, input_name: &str, map: &Map, wrap: Wrapper) {
+    fn make_struct(&mut self, input_name: &str, map: &Map, wrap: &Wrapper) {
         let struct_naming = if self.depth == 1 {
             CasingScheme::Identity
         } else {
@@ -182,7 +184,7 @@ impl<'a> Generator<'a> {
 
         let mut ident = String::new();
         local.format(&mut ident, &self.opts);
-        let ident = self.opts.map_wrapper.0.apply(ident);
+        let ident = self.opts.map_wrapper.apply(ident);
         self.should_include_map = true;
 
         self.items.push(Item {
@@ -192,15 +194,15 @@ impl<'a> Generator<'a> {
     }
 
     fn make_map(&mut self, ty: &Shape) {
-        self.walk(ty, self.opts.map_wrapper.0, "");
+        self.walk(ty, &self.opts.map_wrapper, "");
         self.should_include_map = true;
     }
 
     fn make_vec(&mut self, ty: &Shape, name: &str) {
-        self.walk(ty, self.opts.vec_wrapper.0, name);
+        self.walk(ty, &self.opts.vec_wrapper, name);
     }
 
-    fn write_primitive(&mut self, s: impl Into<String>, wrap: Wrapper) {
+    fn write_primitive(&mut self, s: impl Into<String>, wrap: &Wrapper) {
         let s = s.into();
         self.items.push(Item {
             ident: wrap.apply(s),

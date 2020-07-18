@@ -40,7 +40,7 @@ impl Local {
             Self::String => s.push_str("String"),
             Self::Array(ty) => {
                 Self::format(*ty, s, opts);
-                *s = opts.vec_wrapper.0.apply(std::mem::take(s));
+                *s = opts.vec_wrapper.apply(std::mem::take(s));
             }
             Self::Optional(ty) => {
                 s.push_str(OPTION);

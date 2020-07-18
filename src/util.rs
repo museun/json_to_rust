@@ -52,42 +52,85 @@ pub fn fix_name(name: &str, used: &mut HashSet<String>, casing: CasingScheme) ->
     }
 }
 
-pub static TUPLE_WRAPPER: Wrapper = Wrapper {
-    left: "(",
-    right: ")",
-};
+trait WrapperApply {
+    fn apply(&self, item: String) -> String;
+}
 
-pub static NOOP_WRAPPER: Wrapper = Wrapper::new();
+#[derive(Clone, Debug)]
+pub struct NestedWrapper {
+    left: Wrapper,
+    right: Wrapper,
+}
 
-#[derive(Copy, Clone, Debug)]
-pub struct Wrapper {
-    pub left: &'static str,
-    pub right: &'static str,
+#[derive(Clone, Debug)]
+pub enum Wrapper {
+    Bottom { left: String, right: String },
+    Nested { left: Box<Self>, right: Box<Self> },
+}
+
+impl Wrapper {
+    pub fn wrap(self, other: Self) -> Self {
+        Self::Nested {
+            left: Box::new(self),
+            right: Box::new(other),
+        }
+    }
+
+    pub fn new(left: impl Into<String>, right: impl Into<String>) -> Self {
+        Self::Bottom {
+            left: left.into(),
+            right: right.into(),
+        }
+    }
+
+    pub fn std_vec() -> Self {
+        Self::custom_vec("Vec")
+    }
+
+    pub fn custom_vec(left: impl Into<String>) -> Self {
+        let mut left = left.into();
+        if !left.ends_with('<') {
+            left.push('<')
+        }
+        Self::new(left, ">")
+    }
+
+    pub fn std_map() -> Self {
+        Self::custom_map("HashMap<String, ")
+    }
+
+    pub fn custom_map(left: impl Into<String>) -> Self {
+        let mut left = left.into();
+        if !left.ends_with("<String, ") {
+            left.push_str("<String, ")
+        }
+
+        Self::new(left, ">")
+    }
+
+    pub fn tuple() -> Self {
+        Self::new("(", ")")
+    }
+
+    pub fn option() -> Self {
+        Self::new("Option<", ">)")
+    }
+
+    pub fn apply(&self, item: String) -> String {
+        match self {
+            Wrapper::Bottom { left, right } => {
+                if left.is_empty() && right.is_empty() {
+                    return item;
+                }
+                format!("{}{}{}", left, item, right)
+            }
+            Wrapper::Nested { left, right } => right.apply(left.apply(item)),
+        }
+    }
 }
 
 impl Default for Wrapper {
     fn default() -> Self {
-        NOOP_WRAPPER
-    }
-}
-
-impl Wrapper {
-    pub const fn new() -> Self {
-        Self {
-            left: "",
-            right: "",
-        }
-    }
-
-    pub fn from_string(left: String) -> Self {
-        let left = Box::leak(left.into_boxed_str());
-        Self { left, right: ">" }
-    }
-
-    pub fn apply(&self, item: String) -> String {
-        if self.left.is_empty() && self.right.is_empty() {
-            return item;
-        }
-        format!("{}{}{}", self.left, item, self.right)
+        Self::new("", "")
     }
 }

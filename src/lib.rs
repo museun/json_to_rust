@@ -3,7 +3,7 @@ use std::io::{BufReader, BufWriter, Read, Write};
 
 mod infer;
 mod util;
-use util::Wrapper;
+pub use util::Wrapper;
 
 mod generate;
 use generate::{Print, Program};
@@ -25,44 +25,6 @@ where
     Ok(())
 }
 
-#[derive(Debug, Default)]
-pub struct VecWrapper(pub Wrapper);
-
-impl VecWrapper {
-    pub fn std() -> Self {
-        Self(Wrapper {
-            left: "Vec<",
-            right: ">",
-        })
-    }
-
-    pub fn custom(mut left: String) -> Self {
-        if !left.ends_with('<') {
-            left.push('<')
-        }
-        Self(Wrapper::from_string(left))
-    }
-}
-
-#[derive(Debug, Default)]
-pub struct MapWrapper(pub Wrapper);
-
-impl MapWrapper {
-    pub fn std() -> Self {
-        Self(Wrapper {
-            left: "HashMap<String, ",
-            right: ">",
-        })
-    }
-
-    pub fn custom(mut left: String) -> Self {
-        if !left.ends_with("<String, ") {
-            left.push_str("<String, ")
-        }
-        Self(Wrapper::from_string(left))
-    }
-}
-
 #[derive(Debug)]
 pub struct Options {
     pub json_name: Option<String>,
@@ -77,8 +39,8 @@ pub struct Options {
     pub field_naming: CasingScheme,
     pub struct_naming: CasingScheme,
 
-    pub vec_wrapper: VecWrapper,
-    pub map_wrapper: MapWrapper,
+    pub vec_wrapper: Wrapper,
+    pub map_wrapper: Wrapper,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]

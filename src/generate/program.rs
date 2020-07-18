@@ -3,7 +3,7 @@ use super::{
     item::{Item, Struct},
     Print,
 };
-use crate::{generate, infer::Shape, util::NOOP_WRAPPER, CasingScheme, Options};
+use crate::{generate, infer::Shape, util::Wrapper, CasingScheme, Options};
 
 use json::JsonValue as Value;
 use std::io::Write;
@@ -27,7 +27,7 @@ impl<'a> Program<'a> {
         let mut g = Generator::new(opts);
         g.walk(
             &Shape::new(&val, tuple_max.unwrap_or_default()),
-            NOOP_WRAPPER,
+            &Wrapper::default(),
             &root_name,
         );
 
@@ -73,7 +73,7 @@ impl<'a> Program<'a> {
         let binding = CasingScheme::Snake.convert(&type_name);
 
         if self.is_wrapped() {
-            type_name = self.opts.vec_wrapper.0.apply(type_name);
+            type_name = self.opts.vec_wrapper.apply(type_name);
         }
 
         Some((binding, type_name))

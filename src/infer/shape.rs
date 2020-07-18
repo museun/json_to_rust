@@ -79,6 +79,8 @@ impl Shape {
     }
 
     pub(crate) fn factor(left: Self, right: Self) -> Self {
+        eprintln!("{} | {}", left.root(), right.root());
+
         if left == right {
             return left;
         }

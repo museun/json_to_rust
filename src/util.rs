@@ -14,7 +14,7 @@ pub fn fix_name(name: &str, used: &mut HashSet<String>, casing: CasingScheme) ->
     // TODO ascii-fy everything until rust allows utf-8 identifiers
     let name = name.trim();
     let mut out = match name.chars().next() {
-        Some(c) if c.is_ascii() && c.is_numeric() => casing.convert(&format!("n{}", name)),
+        Some('0'..='9') => casing.convert(&format!("n{}", name)),
         _ => casing.convert(name),
     };
 

@@ -10,7 +10,6 @@ use std::io::Write;
 
 #[derive(Debug)]
 pub struct Program<'a> {
-    is_snippet: bool,
     items: Vec<Item>,
     structs: Vec<Struct>,
     wrap_in_vec: Option<Struct>,
@@ -30,11 +29,17 @@ impl<'a> Program<'a> {
             &root_name,
         );
 
+        let Generator {
+            structs,
+            wrap_in_vec,
+            items,
+            ..
+        } = g;
+
         Self {
-            is_snippet: g.structs.is_empty(),
-            wrap_in_vec: g.wrap_in_vec,
-            items: g.items,
-            structs: g.structs,
+            wrap_in_vec,
+            items,
+            structs,
             opts,
             data,
         }
@@ -92,7 +97,7 @@ impl<'a> Program<'a> {
 
 impl<'a> Print for Program<'a> {
     fn print<W: std::io::Write + ?Sized>(&self, writer: &mut W, opts: &Options) -> super::IoResult {
-        if self.is_snippet {
+        if self.structs.is_empty() {
             for item in &self.items {
                 write!(writer, "// ")?;
                 item.print(writer, opts)?;

@@ -1,7 +1,7 @@
 use super::item::{Field, Item, Struct};
 use crate::{
     infer::{self, Map, Shape},
-    util, Options,
+    util, CasingScheme, Options,
 };
 use std::collections::HashSet;
 
@@ -114,8 +114,13 @@ impl<'a> Generator<'a> {
     }
 
     fn make_struct(&mut self, input_name: &str, map: &Map, wrap: Wrapper) {
-        let struct_name =
-            util::fix_name(input_name, &mut self.seen_structs, self.opts.struct_naming);
+        let struct_naming = if self.depth == 1 {
+            CasingScheme::Identity
+        } else {
+            self.opts.struct_naming
+        };
+
+        let struct_name = util::fix_name(input_name, &mut self.seen_structs, struct_naming);
 
         let mut defs = Vec::new();
         let mut body = Vec::new();
@@ -239,20 +244,20 @@ impl Wrapper {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
 
-    #[test]
-    fn do_we_decay_arrays() {
-        let s = std::fs::read_to_string("short.json").unwrap();
+// #[test]
+// fn do_we_decay_arrays() {
+//     let s = std::fs::read_to_string("short.json").unwrap();
 
-        let val = json::parse(&s).unwrap();
+//     let val = json::parse(&s).unwrap();
 
-        let opts = Options::default();
-        let p = crate::generate::Program::generate(val, &s, &opts);
-        // let p = Shape::new(&val, 0);
+//     let opts = Options::default();
+//     let p = crate::generate::Program::generate(val, &s, &opts);
+//     // let p = Shape::new(&val, 0);
 
-        println!("{:#?}", p);
-    }
-}
+//     println!("{:#?}", p);
+// }
+// }

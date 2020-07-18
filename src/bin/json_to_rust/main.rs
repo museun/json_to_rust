@@ -1,4 +1,3 @@
-use anyhow::Context as _;
 use inflections::Inflect as _;
 use json_to_rust::{all_std_derives, custom, no_derives, CasingScheme};
 
@@ -107,40 +106,50 @@ flags:
     std::process::exit(0)
 }
 
-fn main() -> anyhow::Result<()> {
+fn parse_casing(input: &str) -> Result<CasingScheme, pico_args::Error> {
+    let ok = match input.to_lower_case().as_str() {
+        "snake" => CasingScheme::Snake,
+        "pascal" => CasingScheme::Pascal,
+        "constant" => CasingScheme::Constant,
+        "camel" => CasingScheme::Camel,
+        s => {
+            let cause = format!("'{}' unknown casing. try [snake,pascal,constant,camel]", s);
+            let err = pico_args::Error::ArgumentParsingFailed { cause };
+            return Err(err);
+        }
+    };
+    Ok(ok)
+}
+
+fn parse_args() -> anyhow::Result<json_to_rust::Options> {
     let mut args = pico_args::Arguments::from_env();
 
-    if args.contains(["-v", "--version"]) {
-        print_version();
+    match (
+        args.contains(["-v", "--version"]),
+        args.contains("-h"),
+        args.contains("--help"),
+    ) {
+        (true, _, _) => print_version(),
+        (_, true, _) => print_short_help(),
+        (_, _, true) => print_long_help(),
+        _ => {}
     }
 
-    if args.contains("-h") {
-        print_short_help();
-    }
+    let json_name = args.opt_value_from_str(["-j", "--json-root-name"])?;
 
-    if args.contains("--help") {
-        print_long_help();
-    }
+    let opts = json_to_rust::Options {
+        make_unit_test: args.contains(["-u", "--make-unit-tests"]),
+        make_main: args.contains(["-m", "--make-main"]),
 
-    let opts = {
-        let mut opts = json_to_rust::Options::default();
+        tuple_max: args.opt_value_from_str(["-t", "--max-tuple"])?,
+        max_size: args.opt_value_from_str(["-l", "--large-struct"])?,
 
-        opts.make_unit_test = args.contains(["-u", "--make-unit-tests"]);
-        opts.make_main = args.contains(["-m", "--make-main"]);
-
-        opts.tuple_max = args.opt_value_from_str(["-t", "--max-tuple"])?;
-        opts.max_size = args.opt_value_from_str(["-l", "--large-struct"])?;
-
-        opts.json_name = args.opt_value_from_str(["-j", "--json-root-name"])?;
-
-        opts.root_name = args
+        root_name: args
             .opt_value_from_str(["-n", "--rust-root-name"])?
-            .or_else(|| opts.json_name.as_ref().map(|s| s.to_pascal_case()))
-            .with_context(|| {
-                "`[-n, --rust-root-name]` is required if `[-j, --json-root-name]` is not provided"
-            })?;
+            .or_else(|| json_name.as_ref().map(|s: &String| s.to_pascal_case()))
+            .unwrap_or_else(|| "MyRustStruct".into()),
 
-        opts.default_derives = if args.contains(["-nd", "--no-std-derives"]) {
+        default_derives: if args.contains(["-nd", "--no-std-derives"]) {
             no_derives()
         } else {
             match args
@@ -150,40 +159,26 @@ fn main() -> anyhow::Result<()> {
                 [] => all_std_derives(),
                 [list @ ..] => custom(list),
             }
-        };
+        },
 
-        if opts.default_derives.is_empty() {
-            opts.default_derives = no_derives()
-        }
+        json_name,
 
-        fn parse_casing(input: &str) -> Result<CasingScheme, pico_args::Error> {
-            let ok = match input.to_lower_case().as_str() {
-                "snake" => CasingScheme::Snake,
-                "pascal" => CasingScheme::Pascal,
-                "constant" => CasingScheme::Constant,
-                "camel" => CasingScheme::Camel,
-                s => {
-                    let cause =
-                        format!("'{}' unknown casing. try [snake,pascal,constant,camel]", s);
-                    let err = pico_args::Error::ArgumentParsingFailed { cause };
-                    return Err(err);
-                }
-            };
-            Ok(ok)
-        }
-
-        opts.field_naming = args
+        field_naming: args
             .opt_value_from_fn(["-f", "--field-naming"], parse_casing)?
-            .unwrap_or_else(|| CasingScheme::Snake);
+            .unwrap_or_else(|| CasingScheme::Snake),
 
-        opts.struct_naming = args
+        struct_naming: args
             .opt_value_from_fn(["-s", "--struct-naming"], parse_casing)?
-            .unwrap_or_else(|| CasingScheme::Pascal);
-
-        args.finish()?;
-
-        opts
+            .unwrap_or_else(|| CasingScheme::Pascal),
     };
+
+    args.finish()?;
+
+    Ok(opts)
+}
+
+fn main() -> anyhow::Result<()> {
+    let opts = parse_args()?;
 
     let stdin = std::io::stdin();
     let mut stdin = stdin.lock();

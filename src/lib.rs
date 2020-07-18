@@ -45,6 +45,7 @@ pub enum CasingScheme {
     Pascal,
     Constant,
     Camel,
+    Identity,
 }
 
 impl CasingScheme {
@@ -55,27 +56,7 @@ impl CasingScheme {
             Self::Pascal => input.to_pascal_case(),
             Self::Constant => input.to_constant_case(),
             Self::Camel => input.to_camel_case(),
-        }
-    }
-}
-
-impl Default for Options {
-    fn default() -> Self {
-        let (json_name, make_unit_test, make_main, max_size, tuple_max, default_derives) =
-            <_>::default();
-
-        Self {
-            root_name: "MyRustStruct".into(),
-
-            json_name,
-            make_unit_test,
-            make_main,
-            max_size,
-            tuple_max,
-            default_derives,
-
-            field_naming: CasingScheme::Snake,
-            struct_naming: CasingScheme::Pascal,
+            Self::Identity => input.to_string(),
         }
     }
 }

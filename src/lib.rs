@@ -112,7 +112,7 @@ where
                 .collect::<IndexSet<_>>() // de-dupe
         })
         .filter(|s| !DEFAULT.contains(&&**s)) // remove defaults if they are in the middle
-        .chain(DEFAULT.iter().map(ToString::to_string)) // append defaulfs to the end
+        .chain(DEFAULT.iter().map(ToString::to_string)) // append defaults to the end
         .collect::<IndexSet<_>>() // de-dupe
         .into_iter()
         .fold(String::new(), |mut a, c| {

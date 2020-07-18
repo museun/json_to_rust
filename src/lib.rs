@@ -24,14 +24,14 @@ where
     Ok(())
 }
 
-// TODO document this
 #[derive(Debug)]
 pub struct Options {
     pub json_name: Option<String>,
     pub root_name: String,
+
     pub make_unit_test: bool,
     pub make_main: bool,
-    pub max_size: Option<usize>,
+
     pub tuple_max: Option<usize>,
 
     pub default_derives: String,

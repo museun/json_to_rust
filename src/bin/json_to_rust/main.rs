@@ -25,7 +25,6 @@ flags:
     -j, --json-root-name    the name of the root JSON object
     -n, --rust-root-name    the name of the root Rust object
 
-    -l, --large-struct      unroll Objects under this key length
     -t, --max-tuple         heterogeneous arrays under this size will be treated as a tuple
 
     -d, --derive            add this derive to the generate types
@@ -67,10 +66,6 @@ flags:
     -n, --rust-root-name    the name of the root Rust object
                             - this is the name of your root Rust struct.
                             - if not provided, its inferred from the json name
-
-    -l, --large-struct      unroll Objects under this key length
-                            - for large objects, if the length is this or smaller
-                            - a new struct with all possible (seen) fields will be created
 
     -t, --max-tuple         heterogeneous arrays under this size will be treated as a tuple
                             - for types such as [1, false, "foo"] if the length exceeds the provided value
@@ -142,7 +137,6 @@ fn parse_args() -> anyhow::Result<json_to_rust::Options> {
         make_main: args.contains(["-m", "--make-main"]),
 
         tuple_max: args.opt_value_from_str(["-t", "--max-tuple"])?,
-        max_size: args.opt_value_from_str(["-l", "--large-struct"])?,
 
         root_name: args
             .opt_value_from_str(["-n", "--rust-root-name"])?

@@ -132,14 +132,10 @@ impl<'a> Generator<'a> {
             let field_renamed = field_name != *name;
 
             match shape {
-                Shape::Object(map) => {
-                    let max = self.opts.max_size;
-                    if max.filter(|&max| map.len() > max).is_some() || map.len() > 5 {
-                        self.make_field_map(map);
-                    } else {
-                        self.walk(shape, wrap, &field_name)
-                    }
-                }
+                // flatten big structs into just a hashmap (TODO unify the maps
+                // and use a metric for determining how many fields are
+                // acceptable)
+                Shape::Object(map) => self.make_field_map(map),
                 Shape::Map(_) => unreachable!("shouldn't have a map here"),
                 _ => self.walk(shape, wrap, &field_name),
             }
@@ -243,21 +239,3 @@ impl Wrapper {
         format!("{}{}{}", self.left, item, self.right)
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-
-// #[test]
-// fn do_we_decay_arrays() {
-//     let s = std::fs::read_to_string("short.json").unwrap();
-
-//     let val = json::parse(&s).unwrap();
-
-//     let opts = Options::default();
-//     let p = crate::generate::Program::generate(val, &s, &opts);
-//     // let p = Shape::new(&val, 0);
-
-//     println!("{:#?}", p);
-// }
-// }

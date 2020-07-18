@@ -75,7 +75,7 @@ impl<'a> Program<'a> {
         Some(UnitTest {
             binding,
             type_name,
-            sample: &self.data,
+            sample: self.data,
         })
     }
 

@@ -29,6 +29,13 @@ pub fn fix_name(name: &str, used: &mut HashSet<String>, casing: CasingScheme) ->
     let mut temp = out.clone();
     loop {
         if !used.contains(&temp) {
+            // fast path. if we don't need to rename on the first try, don't
+            // make a 2nd allocation
+            if i == 1 {
+                used.insert(temp);
+                break out;
+            }
+
             used.insert(temp.clone());
             break temp;
         }

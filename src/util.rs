@@ -10,6 +10,10 @@ pub const KEYWORDS: &[&str] = &[
     "yield",
 ];
 
+pub const BUILTIN: &[&str] = &[
+    "bool", "Box", "f64", "i64", "Option", "Result", "String", "Vec",
+];
+
 pub fn fix_name(name: &str, used: &mut HashSet<String>, casing: CasingScheme) -> String {
     // TODO ascii-fy everything until rust allows utf-8 identifiers
     let name = name.trim();
@@ -20,6 +24,10 @@ pub fn fix_name(name: &str, used: &mut HashSet<String>, casing: CasingScheme) ->
 
     if KEYWORDS.contains(&&*out) {
         out.push('_');
+    }
+
+    if BUILTIN.contains(&&*out) {
+        out.push('_')
     }
 
     assert!(!out.is_empty());

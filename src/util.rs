@@ -43,3 +43,43 @@ pub fn fix_name(name: &str, used: &mut HashSet<String>, casing: CasingScheme) ->
         temp = format!("{}{}", out, i);
     }
 }
+
+pub static TUPLE_WRAPPER: Wrapper = Wrapper {
+    left: "(",
+    right: ")",
+};
+
+pub static NOOP_WRAPPER: Wrapper = Wrapper::new();
+
+#[derive(Copy, Clone, Debug)]
+pub struct Wrapper {
+    pub left: &'static str,
+    pub right: &'static str,
+}
+
+impl Default for Wrapper {
+    fn default() -> Self {
+        NOOP_WRAPPER
+    }
+}
+
+impl Wrapper {
+    pub const fn new() -> Self {
+        Self {
+            left: "",
+            right: "",
+        }
+    }
+
+    pub fn from_string(left: String) -> Self {
+        let left = Box::leak(left.into_boxed_str());
+        Self { left, right: ">" }
+    }
+
+    pub fn apply(&self, item: String) -> String {
+        if self.left.is_empty() && self.right.is_empty() {
+            return item;
+        }
+        format!("{}{}{}", self.left, item, self.right)
+    }
+}

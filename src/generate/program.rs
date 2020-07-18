@@ -1,9 +1,9 @@
 use super::{
-    generator::{Generator, NOOP_WRAPPER, VEC_WRAPPER},
+    generator::Generator,
     item::{Item, Struct},
     Print,
 };
-use crate::{generate, infer::Shape, CasingScheme, Options};
+use crate::{generate, infer::Shape, util::NOOP_WRAPPER, CasingScheme, Options};
 
 use json::JsonValue as Value;
 use std::io::Write;
@@ -15,6 +15,8 @@ pub struct Program<'a> {
     wrap_in_vec: Option<Struct>,
     opts: &'a Options,
     data: &'a str,
+
+    should_include_map: bool,
 }
 
 impl<'a> Program<'a> {
@@ -33,6 +35,7 @@ impl<'a> Program<'a> {
             structs,
             wrap_in_vec,
             items,
+            should_include_map,
             ..
         } = g;
 
@@ -42,6 +45,8 @@ impl<'a> Program<'a> {
             structs,
             opts,
             data,
+
+            should_include_map,
         }
     }
 
@@ -68,7 +73,7 @@ impl<'a> Program<'a> {
         let binding = CasingScheme::Snake.convert(&type_name);
 
         if self.is_wrapped() {
-            type_name = VEC_WRAPPER.apply(type_name);
+            type_name = self.opts.vec_wrapper.0.apply(type_name);
         }
 
         Some((binding, type_name))
@@ -104,6 +109,10 @@ impl<'a> Print for Program<'a> {
                 writeln!(writer)?;
             }
             return Ok(());
+        }
+
+        if self.should_include_map {
+            writeln!(writer, "use std::collections::HashMap;")?;
         }
 
         writeln!(writer, "use ::serde::{{Serialize, Deserialize}};")?;

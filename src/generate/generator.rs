@@ -4,6 +4,7 @@ use crate::{
     util, CasingScheme, Options,
 };
 use std::collections::HashSet;
+use util::{Wrapper, NOOP_WRAPPER, TUPLE_WRAPPER};
 
 #[derive(Debug)]
 pub struct Generator<'a> {
@@ -14,6 +15,8 @@ pub struct Generator<'a> {
     pub seen_structs: HashSet<String>,
     pub depth: usize,
 
+    pub should_include_map: bool,
+
     pub root_at: usize,
     pub wrap_in_vec: Option<Struct>,
 }
@@ -23,13 +26,16 @@ impl<'a> Generator<'a> {
         let (structs, items, seen_structs, depth, wrap_in_vec) = <_>::default();
 
         Self {
-            opts,
-            root_at: 1,
-
             structs,
             items,
+            opts,
+
             seen_structs,
             depth,
+
+            should_include_map: false,
+
+            root_at: 1,
             wrap_in_vec,
         }
     }
@@ -47,7 +53,7 @@ impl<'a> Generator<'a> {
                 fields: vec![Field {
                     rename: self.opts.json_name.clone(),
                     binding: "list".into(),
-                    kind: VEC_WRAPPER.apply(self.opts.root_name.clone()),
+                    kind: self.opts.vec_wrapper.0.apply(self.opts.root_name.clone()),
                 }],
             });
             assert!(
@@ -174,9 +180,10 @@ impl<'a> Generator<'a> {
         let shape = infer::Shape::fold(map.values().cloned());
         let local = infer::Local::new(shape);
 
-        let mut ident = String::from("::std::collections::HashMap<String, ");
-        local.format(&mut ident);
-        ident.push('>');
+        let mut ident = String::new();
+        local.format(&mut ident, &self.opts);
+        let ident = self.opts.map_wrapper.0.apply(ident);
+        self.should_include_map = true;
 
         self.items.push(Item {
             ident,
@@ -185,11 +192,12 @@ impl<'a> Generator<'a> {
     }
 
     fn make_map(&mut self, ty: &Shape) {
-        self.walk(ty, MAP_WRAPPER, "");
+        self.walk(ty, self.opts.map_wrapper.0, "");
+        self.should_include_map = true;
     }
 
     fn make_vec(&mut self, ty: &Shape, name: &str) {
-        self.walk(ty, VEC_WRAPPER, name);
+        self.walk(ty, self.opts.vec_wrapper.0, name);
     }
 
     fn write_primitive(&mut self, s: impl Into<String>, wrap: Wrapper) {
@@ -198,44 +206,5 @@ impl<'a> Generator<'a> {
             ident: wrap.apply(s),
             body: vec![],
         });
-    }
-}
-
-pub static MAP_WRAPPER: Wrapper = Wrapper {
-    left: "::std::collections::HashMap<String, ",
-    right: ">",
-};
-
-pub static VEC_WRAPPER: Wrapper = Wrapper {
-    left: "::std::vec::Vec<",
-    right: ">",
-};
-
-pub static TUPLE_WRAPPER: Wrapper = Wrapper {
-    left: "(",
-    right: ")",
-};
-
-pub static NOOP_WRAPPER: Wrapper = Wrapper::new();
-
-#[derive(Copy, Clone)]
-pub struct Wrapper {
-    left: &'static str,
-    right: &'static str,
-}
-
-impl Wrapper {
-    pub const fn new() -> Self {
-        Self {
-            left: "",
-            right: "",
-        }
-    }
-
-    pub fn apply(&self, item: String) -> String {
-        if self.left.is_empty() && self.right.is_empty() {
-            return item;
-        }
-        format!("{}{}{}", self.left, item, self.right)
     }
 }

@@ -1,5 +1,5 @@
 use inflections::Inflect as _;
-use json_to_rust::{all_std_derives, custom, no_derives, CasingScheme};
+use json_to_rust::{all_std_derives, custom, no_derives, CasingScheme, MapWrapper, VecWrapper};
 
 fn header() {
     println!("{}: {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
@@ -32,6 +32,9 @@ flags:
 
     -f, --field-naming      the casing scheme to use for fields
     -s, --struct-naming     the casing scheme to use for structs
+
+    --vec-wrapper           use this type for Vecs, defaults to 'Vec'
+    --map-wrapper           use this type for Maps, defaults to 'HashMap'
 
     -v, --version           show the current version
     -h, --help              show this message
@@ -91,6 +94,9 @@ flags:
     -s, --struct-naming     the casing scheme to use for structs
                             - this defaults to PascalCase
                             - available options [snake, constant, pascal, camel]
+
+    --vec-wrapper           use this type for Vecs, defaults to 'Vec'
+    --map-wrapper           use this type for Maps, defaults to 'HashMap'
 
     -v, --version           show the current version
     -h, --help              show this message
@@ -164,6 +170,16 @@ fn parse_args() -> anyhow::Result<json_to_rust::Options> {
         struct_naming: args
             .opt_value_from_fn(["-s", "--struct-naming"], parse_casing)?
             .unwrap_or_else(|| CasingScheme::Pascal),
+
+        vec_wrapper: args
+            .opt_value_from_str("--vec-wrapper")?
+            .map(VecWrapper::custom)
+            .unwrap_or_else(VecWrapper::std),
+
+        map_wrapper: args
+            .opt_value_from_str("--map-wrapper")?
+            .map(MapWrapper::custom)
+            .unwrap_or_else(MapWrapper::std),
     };
 
     args.finish()?;

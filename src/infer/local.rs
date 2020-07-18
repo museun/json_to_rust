@@ -1,4 +1,5 @@
 use super::Shape;
+use crate::Options;
 
 #[derive(PartialOrd, PartialEq, Ord, Eq, Debug)]
 pub enum Local {
@@ -28,10 +29,9 @@ impl Local {
     }
 
     // TODO make this iterative and use the 'Wrapper' from the generator
-    pub fn format(self, s: &mut String) {
+    pub fn format(self, s: &mut String, opts: &Options) {
         const ANY_VALUE: &str = "::serde_json::Value";
-        const VEC: &str = "::std::vec::Vec";
-        const OPTION: &str = "::std::option::Option";
+        const OPTION: &str = "Option";
 
         match self {
             Self::Bool => s.push_str("bool"),
@@ -39,17 +39,14 @@ impl Local {
             Self::Float => s.push_str("f64"),
             Self::String => s.push_str("String"),
             Self::Array(ty) => {
-                s.push_str(VEC);
-
-                s.push('<');
-                Self::format(*ty, s);
-                s.push('>')
+                Self::format(*ty, s, opts);
+                *s = opts.vec_wrapper.0.apply(std::mem::take(s));
             }
             Self::Optional(ty) => {
                 s.push_str(OPTION);
 
                 s.push('<');
-                Self::format(*ty, s);
+                Self::format(*ty, s, opts);
                 s.push('>')
             }
             Self::Complex => s.push_str(ANY_VALUE),

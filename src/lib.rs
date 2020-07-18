@@ -101,26 +101,25 @@ where
     S: ToString,
     L: IntoIterator<Item = S>,
 {
-    let default = ["Serialize", "Deserialize"];
+    const DEFAULT: [&str; 2] = ["Serialize", "Deserialize"];
 
-    let derives = list
-        .into_iter()
+    list.into_iter()
         .flat_map(|s| {
             s.to_string()
-                .split(',')
-                .filter(|c| !c.starts_with(char::is_numeric))
+                .split(',') // split if the user provided a comma-separated list
+                .filter(|c| !c.starts_with(char::is_numeric)) // invalid trait name (TODO: make this more rigid)
                 .map(ToString::to_string)
-                .collect::<IndexSet<_>>()
+                .collect::<IndexSet<_>>() // de-dupe
         })
-        .filter(|s| !default.contains(&&**s))
-        .chain(default.iter().map(ToString::to_string))
-        .collect::<IndexSet<_>>();
-
-    derives.into_iter().fold(String::new(), |mut a, c| {
-        if !a.is_empty() {
-            a.push_str(", ");
-        }
-        a.push_str(&c);
-        a
-    })
+        .filter(|s| !DEFAULT.contains(&&**s)) // remove defaults if they are in the middle
+        .chain(DEFAULT.iter().map(ToString::to_string)) // append defaulfs to the end
+        .collect::<IndexSet<_>>() // de-dupe
+        .into_iter()
+        .fold(String::new(), |mut a, c| {
+            if !a.is_empty() {
+                a.push_str(", ");
+            }
+            a.push_str(&c);
+            a
+        })
 }

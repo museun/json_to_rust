@@ -19,7 +19,7 @@ pub fn fix_name(name: &str, used: &mut HashSet<String>, casing: CasingScheme) ->
     };
 
     if KEYWORDS.contains(&&*out) {
-        out.push_str("_");
+        out.push('_');
     }
 
     assert!(!out.is_empty());

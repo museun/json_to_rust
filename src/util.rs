@@ -1,98 +1,136 @@
-use inflections::Inflect as _;
-
+use crate::CasingScheme;
 use std::collections::HashSet;
 
 pub const KEYWORDS: &[&str] = &[
-    "abstract", "alignof", "as", "become", "box", "break", "const", "continue", "crate", "do",
-    "else", "enum", "extern", "false", "final", "fn", "for", "if", "impl", "in", "let", "loop",
-    "macro", "match", "mod", "move", "mut", "offsetof", "override", "priv", "proc", "pub", "pure",
-    "ref", "return", "Self", "self", "sizeof", "static", "struct", "super", "trait", "true",
-    "type", "typeof", "unsafe", "unsized", "use", "virtual", "where", "while", "yield", "async",
-    "await", "try",
+    "abstract", "alignof", "as", "async", "await", "become", "box", "break", "const", "continue",
+    "crate", "do", "else", "enum", "extern", "false", "final", "fn", "for", "if", "impl", "in",
+    "let", "loop", "macro", "match", "mod", "move", "mut", "offsetof", "override", "priv", "proc",
+    "pub", "pure", "ref", "return", "self", "Self", "sizeof", "static", "struct", "super", "trait",
+    "true", "try", "type", "typeof", "unsafe", "unsized", "use", "virtual", "where", "while",
+    "yield",
 ];
 
-pub fn fix_struct_name(name: &str, used: &mut HashSet<String>) -> String {
-    fix_name(name, used, to_pascal_case)
-}
+pub const BUILTIN: &[&str] = &[
+    "bool", "Box", "f64", "i64", "Option", "Result", "String", "Vec",
+];
 
-pub fn fix_field_name(name: &str, used: &mut HashSet<String>) -> String {
-    fix_name(name, used, to_snake_case)
-}
-
-fn fix_name(name: &str, used: &mut HashSet<String>, rename: fn(&str) -> String) -> String {
+pub fn fix_name(name: &str, used: &mut HashSet<String>, casing: CasingScheme) -> String {
+    // TODO ascii-fy everything until rust allows utf-8 identifiers
     let name = name.trim();
     let mut out = match name.chars().next() {
-        Some(c) if c.is_ascii() && c.is_numeric() => rename(&format!("n{}", name)),
-        _ => rename(name),
+        Some('0'..='9') => casing.convert(&format!("n{}", name)),
+        _ => casing.convert(name),
     };
 
     if KEYWORDS.contains(&&*out) {
-        out.push_str("_");
+        out.push('_');
+    }
+
+    if BUILTIN.contains(&&*out) {
+        out.push('_')
     }
 
     assert!(!out.is_empty());
 
-    if !used.contains(&out) {
-        used.insert(out.clone());
-        return out;
-    }
-
-    for i in 2.. {
-        let temp = format!("{}_{}", out, i);
+    let mut i = 1;
+    // clone so we have the original string to try a new suffix with
+    let mut temp = out.clone();
+    loop {
         if !used.contains(&temp) {
+            // fast path. if we don't need to rename on the first try, don't
+            // make a 2nd allocation
+            if i == 1 {
+                used.insert(temp);
+                break out;
+            }
+
             used.insert(temp.clone());
-            return temp;
+            break temp;
+        }
+        i += 1;
+        temp = format!("{}{}", out, i);
+    }
+}
+
+trait WrapperApply {
+    fn apply(&self, item: String) -> String;
+}
+
+#[derive(Clone, Debug)]
+pub struct NestedWrapper {
+    left: Wrapper,
+    right: Wrapper,
+}
+
+#[derive(Clone, Debug)]
+pub enum Wrapper {
+    Bottom { left: String, right: String },
+    Nested { left: Box<Self>, right: Box<Self> },
+}
+
+impl Wrapper {
+    pub fn wrap(self, other: Self) -> Self {
+        Self::Nested {
+            left: Box::new(self),
+            right: Box::new(other),
         }
     }
 
-    unreachable!()
+    pub fn new(left: impl Into<String>, right: impl Into<String>) -> Self {
+        Self::Bottom {
+            left: left.into(),
+            right: right.into(),
+        }
+    }
+
+    pub fn std_vec() -> Self {
+        Self::custom_vec("Vec")
+    }
+
+    pub fn custom_vec(left: impl Into<String>) -> Self {
+        let mut left = left.into();
+        if !left.ends_with('<') {
+            left.push('<')
+        }
+        Self::new(left, ">")
+    }
+
+    pub fn std_map() -> Self {
+        Self::custom_map("HashMap<String, ")
+    }
+
+    pub fn custom_map(left: impl Into<String>) -> Self {
+        let mut left = left.into();
+        if !left.ends_with("<String, ") {
+            left.push_str("<String, ")
+        }
+
+        Self::new(left, ">")
+    }
+
+    pub fn tuple() -> Self {
+        Self::new("(", ")")
+    }
+
+    pub fn option() -> Self {
+        Self::new("Option<", ">")
+    }
+
+    pub fn apply(&self, item: String) -> String {
+        match self {
+            Wrapper::Bottom { left, right } => {
+                if left.is_empty() && right.is_empty() {
+                    return item;
+                }
+                format!("{}{}{}", left, item, right)
+            }
+            Wrapper::Nested { left, right } => left.apply(right.apply(item)),
+        }
+    }
 }
 
-pub fn to_snake_case(name: &str) -> String {
-    name.to_snake_case()
-
-    // let mut out = String::with_capacity(name.len());
-    // let mut seen = false;
-    // for (i, ch) in name.char_indices() {
-    //     if i == 0 && ch == '_' {
-    //         continue;
-    //     }
-
-    //     if i > 0 && ch.is_numeric() && !seen {
-    //         out.push('_');
-    //         seen = true;
-    //     }
-
-    //     if !ch.is_numeric() {
-    //         seen = false
-    //     }
-
-    //     if ch == '-' {
-    //         out.push('_');
-    //         seen = true;
-    //     } else {
-    //         out.push(ch.to_ascii_lowercase());
-    //     }
-    // }
-    // out
-}
-
-pub fn to_pascal_case(name: &str) -> String {
-    name.to_pascal_case()
-
-    // let name = name.trim();
-    // let mut out = String::with_capacity(name.len());
-    // let mut upper = true;
-    // for ch in name.chars() {
-    //     if ch == '_' {
-    //         upper = true
-    //     } else if upper {
-    //         out.push(ch.to_ascii_uppercase());
-    //         upper = false
-    //     } else {
-    //         out.push(ch)
-    //     }
-    // }
-    // assert!(!out.is_empty());
-    // out
+impl Default for Wrapper {
+    fn default() -> Self {
+        Self::new("", "")
+    }
 }

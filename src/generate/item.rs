@@ -1,3 +1,6 @@
+use super::Print;
+use crate::Options;
+
 #[derive(Debug)]
 pub struct Struct {
     pub rename: Option<String>,
@@ -8,43 +11,45 @@ pub struct Struct {
 #[derive(Debug, Clone)]
 pub struct Field {
     pub rename: Option<String>,
+    pub default: bool,
     pub binding: String,
     pub kind: String,
 }
 
-// TODO replace this with a dump method that writes directly to an
-// std::io::Write instead of allocating a string
-impl std::fmt::Display for Struct {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        const STD_DERIVES: &str = "#[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]";
-        const SERDE_DERIVES: &str = "#[derive(serde::Serialize, serde::Deserialize)]";
-
-        f.write_str(STD_DERIVES)?;
-        f.write_str("\n")?;
-
-        f.write_str(SERDE_DERIVES)?;
-        f.write_str("\n")?;
+impl Print for Struct {
+    fn print<W: std::io::Write + ?Sized>(&self, writer: &mut W, opts: &Options) -> super::IoResult {
+        writeln!(writer, "#[derive({})]", &opts.default_derives)?;
 
         if let Some(rename) = &self.rename {
-            writeln!(f, "#[serde(rename = \"{}\")]", rename)?;
+            writeln!(writer, "#[serde(rename = \"{}\")]", rename)?;
         }
 
-        writeln!(f, "pub struct {} {{", self.name)?;
+        writeln!(writer, "pub struct {} {{", self.name)?;
 
         let fields = {
-            let mut f = self.fields.clone();
-            f.sort_by(|l, r| l.binding.cmp(&r.binding));
-            f
+            let mut fields = self.fields.clone();
+            fields.sort_by(|l, r| l.binding.cmp(&r.binding));
+            fields
         };
 
         for field in fields {
-            if let Some(rename) = &field.rename {
-                writeln!(f, "    #[serde(rename = \"{}\")]", rename)?;
+            match (field.default, &field.rename) {
+                (true, Some(rename)) => {
+                    writeln!(writer, "    #[serde(default, rename = \"{}\")]", rename)?;
+                }
+                (true, None) => {
+                    writeln!(writer, "    #[serde(default)]")?;
+                }
+                (false, Some(rename)) => {
+                    writeln!(writer, "    #[serde(rename = \"{}\")]", rename)?;
+                }
+                _ => {}
             }
-            writeln!(f, "    pub {}: {},", field.binding, field.kind)?;
+
+            writeln!(writer, "    pub {}: {},", field.binding, field.kind)?;
         }
 
-        writeln!(f, "}}")
+        writeln!(writer, "}}")
     }
 }
 
@@ -54,11 +59,12 @@ pub struct Item {
     pub body: Vec<String>,
 }
 
-// TODO replace this with a dump method that writes directly to an
-// std::io::Write instead of allocating a string
-impl std::fmt::Display for Item {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.ident)?;
-        self.body.iter().map(|el| write!(f, "{}", el)).collect()
+impl Print for Item {
+    fn print<W: std::io::Write + ?Sized>(&self, writer: &mut W, _: &Options) -> super::IoResult {
+        write!(writer, "{}", self.ident)?;
+        self.body
+            .iter()
+            .map(|el| write!(writer, "{}", el))
+            .collect()
     }
 }

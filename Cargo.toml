@@ -1,10 +1,13 @@
 [package]
-name    = "json_to_rust"
-version = "0.2.0"
-authors = ["museun <museun@outlook.com>"]
-edition = "2018"
-license = "0BSD"
-readme  = "README.md"
+authors       = ["museun <museun@outlook.com>"]
+description   = "turns sample json into rust structs"
+documentation = "https://docs.rs/json_to_rust/latest/json_to_rust/"
+edition       = "2018"
+license       = "0BSD"
+name          = "json_to_rust"
+readme        = "README.md"
+repository    = "https://github.com/museun/json_to_rust"
+version       = "0.2.0"
 
 [dependencies]
 anyhow      = "1.0.33"

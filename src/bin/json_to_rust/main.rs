@@ -16,7 +16,7 @@ description:
     pipe some json to this and it'll generate some rust for you.
 
 usage:
-    < foo.json | json_to_rust -j json_object -n MyStruct > out.rs
+    cat foo.json | json_to_rust -j json_object -n MyStruct > out.rs
 
 flags:
     -u, --make-unit-tests   generate unit tests
@@ -53,7 +53,7 @@ description:
     pipe some json to this and it'll generate some rust for you.
 
 usage:
-    < foo.json | json_to_rust -j json_object -n MyStruct > out.rs
+    cat foo.json | json_to_rust -j json_object -n MyStruct > out.rs
 
 flags:
     -u, --make-unit-tests   generate unit tests

@@ -1,11 +1,15 @@
+# json_to_rust
+
+this allows you to generate rust from sample json
+
 ```
-json_to_rust: 0.1.0
+json_to_rust: 0.2.0
 
 description:
     pipe some json to this and it'll generate some rust for you.
 
 usage:
-    < foo.json | json_to_rust -j json_object -n MyStruct > out.rs
+    cat foo.json | json_to_rust -j json_object -n MyStruct > out.rs
 
 flags:
     -u, --make-unit-tests   generate unit tests
@@ -57,6 +61,7 @@ flags:
 
     -v, --version           show the current version
     -h, --help              show this message
+
 ```
 
 License: 0BSD

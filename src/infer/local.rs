@@ -49,6 +49,8 @@ impl Local {
                 Self::format(*ty, s, opts);
                 s.push('>')
             }
+
+            // TODO this breaks the struct flattening
             Self::Complex => s.push_str(ANY_VALUE),
         }
     }

@@ -137,7 +137,7 @@ impl<'a> Print for Program<'a> {
             match self.make_main() {
                 Some(func) => func.print(writer, opts)?,
                 None => {
-                    eprintln!("WARNING: cannot create make function, cannot find root struct name")
+                    eprintln!("WARNING: cannot create main function, cannot find root struct name")
                 }
             };
         }

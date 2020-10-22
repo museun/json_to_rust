@@ -7,13 +7,8 @@ license = "0BSD"
 readme  = "README.md"
 
 [dependencies]
-anyhow      = "1.0.31"
-indexmap    = { version = "1.4.0" }
+anyhow      = "1.0.33"
+indexmap    = "1.6.0"
 inflections = "1.1.1"
 json        = "0.12.4"
-pico-args   = "0.3.3"
-
-[profile.release]
-opt-level     = 'z'
-lto           = true
-codegen-units = 1
+pico-args   = "0.3.4"

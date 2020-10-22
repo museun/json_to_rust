@@ -153,10 +153,19 @@ impl<'a> Generator<'a> {
             let field_renamed = field_name != *name;
 
             match shape {
-                // flatten big structs into just a hashmap (TODO unify the maps
-                // and use a metric for determining how many fields are
-                // acceptable)
-                Shape::Object(map) => self.make_field_map(map),
+                Shape::Object(map) => {
+                    // if the type is uniform and unfolds to the same type
+                    // or if the type isn't uniform and won't unfold to the same type
+                    // then we'll keep walking the tree
+                    //
+                    // otherwise, just use the shorthand for 'complex' objects
+                    match (shape.is_uniform(), shape.unfold().is_some()) {
+                        (false, false) | (true, true) => {
+                            self.walk(shape, &Wrapper::default(), name, default)
+                        }
+                        _ => self.make_field_map(map),
+                    }
+                }
                 Shape::Map(_) => unreachable!("shouldn't have a map here"),
                 _ => {
                     if let Some(shape) = collapse_option_vec(shape, self.opts.collapse_option_vec) {
